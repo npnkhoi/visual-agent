@@ -6,22 +6,7 @@ from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_anthropic import ChatAnthropic
 
-# Ordered list of models to try when the primary is unavailable.
-# Free models first, then cheap paid fallbacks.
-FALLBACK_MODELS = [
-    # Free tier
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "mistralai/mistral-small-3.1-24b-instruct:free",
-    "qwen/qwen3-coder:free",
-    "openai/gpt-oss-120b:free",
-    "google/gemma-3-27b-it:free",
-    # Cheap paid (~$0.01–0.15 / 1M tokens)
-    "google/gemini-2.0-flash-lite-001",
-    "google/gemini-2.0-flash-001",
-    "openai/gpt-4o-mini",
-    "meta-llama/llama-3.1-8b-instruct",
-    "mistralai/mistral-small-3.2-24b-instruct",
-]
+DEFAULT_MODEL = "MiniMax-M2.7"
 
 from .tools.detection_tools import grounding_dino_tool
 from .tools.similarity_tools import clip_verify_tool, clip_rank_tool
@@ -73,7 +58,7 @@ def build_agent(task_mode: str = "counting", model: Optional[str] = None) -> Age
         MessagesPlaceholder(variable_name="agent_scratchpad"),
     ])
 
-    resolved_model = model or os.environ.get("MODEL_ID", "MiniMax-M2.7")
+    resolved_model = model or os.environ.get("MODEL_ID", DEFAULT_MODEL)
 
     llm = ChatAnthropic(
         model=resolved_model,

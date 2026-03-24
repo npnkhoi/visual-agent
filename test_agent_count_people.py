@@ -1,5 +1,4 @@
 """End-to-end agent test: count people via LLM + tools."""
-import json
 import os
 import subprocess
 import tempfile
@@ -18,8 +17,7 @@ if not os.path.exists(IMAGE_PATH):
 from dotenv import load_dotenv
 load_dotenv()
 
-from agent.agent import build_agent, FALLBACK_MODELS
-from openai import RateLimitError, NotFoundError, APIStatusError
+from agent.agent import build_agent, DEFAULT_MODEL
 
 prompt = (
     f"How many people are in this image?\n\n"
@@ -27,40 +25,22 @@ prompt = (
     f"output_dir: {OUTPUT_DIR}"
 )
 
+model_id = os.environ.get("MODEL_ID", DEFAULT_MODEL)
+print(f"Model  : {model_id}")
 print(f"Prompt : {prompt}")
 print(f"Output : {OUTPUT_DIR}")
 print()
 
-env_model = os.environ.get("MODEL_ID", "")
-models_to_try = (
-    [env_model] + [m for m in FALLBACK_MODELS if m != env_model]
-    if env_model else FALLBACK_MODELS
-)
+executor = build_agent("counting")
+result = executor.invoke({"input": prompt})
 
-result = None
-used_model = None
+output = result.get("output", "")
+if isinstance(output, list):
+    output = " ".join(
+        block.get("text", "") for block in output
+        if isinstance(block, dict) and block.get("type") == "text"
+    )
 
-for model_id in models_to_try:
-    try:
-        print(f"Trying model: {model_id}")
-        executor = build_agent("counting", model=model_id)
-        result = executor.invoke({"input": prompt})
-        used_model = model_id
-        break
-    except (RateLimitError, NotFoundError) as e:
-        print(f"  FAILED ({type(e).__name__}): {e}")
-    except APIStatusError as e:
-        if e.status_code in (402, 429, 503):
-            print(f"  FAILED (HTTP {e.status_code}): {e.message}")
-        else:
-            raise
-
-if result is None:
-    print("All models failed.")
-else:
-    print()
-    print(f"Model used: {used_model}")
-    print()
-    print("=" * 50)
-    print(result["output"])
-    print("=" * 50)
+print("=" * 50)
+print(output)
+print("=" * 50)

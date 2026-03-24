@@ -5,7 +5,7 @@ Agentic computer vision system for **object counting** and **object search**, us
 - **Grounding DINO** — zero-shot object detection
 - **CLIP ViT-L/14** — semantic verification and image similarity
 - **LangChain** — tool-calling agent loop (ReAct pattern)
-- **OpenRouter** — free/cheap LLM as orchestrator
+- **MiniMax M2.7** — LLM orchestrator (via MiniMax API)
 - **Streamlit** — chat UI with live tool call visibility
 
 ---
@@ -28,13 +28,13 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `.env` and fill in your [OpenRouter](https://openrouter.ai) API key:
+Edit `.env` and fill in your MiniMax API key:
 
 ```
-OPENROUTER_API_KEY=sk-or-v1-...
+MINIMAX_API_KEY=your-minimax-api-key
 ```
 
-`MODEL_ID` defaults to `meta-llama/llama-3.3-70b-instruct:free`. You can change it to any model on OpenRouter that supports tool calling. If the selected model is rate-limited or unavailable, the agent automatically falls back through a list of free and cheap paid models.
+`MODEL_ID` defaults to `MiniMax-M2.7`. Override it by setting `MODEL_ID` in `.env`.
 
 ### 3. Run
 
@@ -79,7 +79,7 @@ The agent will:
 visual-agent/
 ├── app.py                        # Streamlit UI
 ├── agent/
-│   ├── agent.py                  # LangChain agent factory, fallback model list
+│   ├── agent.py                  # LangChain agent factory
 │   └── tools/
 │       ├── model_registry.py     # Singleton lazy loader for GDINO + CLIP
 │       ├── detection_tools.py    # Grounding DINO tool
@@ -99,7 +99,7 @@ visual-agent/
 # Unit test — runs Grounding DINO + CLIP directly, no LLM needed
 conda run -n visual-agent python test_count_people.py
 
-# End-to-end test — runs the full agent (requires OPENROUTER_API_KEY)
+# End-to-end test — runs the full agent (requires MINIMAX_API_KEY)
 conda run -n visual-agent python test_agent_count_people.py
 ```
 

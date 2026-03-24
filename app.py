@@ -261,8 +261,8 @@ load_models()
 
 # ── Main area ──────────────────────────────────────────────────────────────────
 st.title("👁️ Visual Agent")
-from agent.agent import FALLBACK_MODELS as _FALLBACK_MODELS
-_default_model = os.environ.get("MODEL_ID", _FALLBACK_MODELS[0])
+from agent.agent import DEFAULT_MODEL as _DEFAULT_MODEL
+_default_model = os.environ.get("MODEL_ID", _DEFAULT_MODEL)
 st.caption(
     f"Mode: **{'Object Counting' if task_mode == 'counting' else 'Object Search'}** | "
     f"LLM: `{_default_model}` | Detection: Grounding DINO | Verification: CLIP ViT-L/14"
@@ -287,26 +287,21 @@ user_input = st.chat_input(
 )
 
 if user_input:
-    if scene_file is None:
-        st.error("Please upload a scene image first.")
-        st.stop()
-    if task_mode == "search" and pattern_file is None:
-        st.error("Please upload a reference/pattern image for search mode.")
-        st.stop()
-
     temp_dir = st.session_state.temp_dir
-    scene_path = save_upload(scene_file, temp_dir)
-    pattern_path = save_upload(pattern_file, temp_dir) if pattern_file else None
+    agent_input = user_input
 
-    if task_mode == "counting":
-        agent_input = f"{user_input}\n\nimage_path: {scene_path}\noutput_dir: {temp_dir}"
-    else:
-        agent_input = (
-            f"{user_input}\n\n"
-            f"image_path: {scene_path}\n"
-            f"pattern_image_path: {pattern_path}\n"
-            f"output_dir: {temp_dir}"
-        )
+    if scene_file is not None:
+        scene_path = save_upload(scene_file, temp_dir)
+        pattern_path = save_upload(pattern_file, temp_dir) if pattern_file else None
+        if task_mode == "counting":
+            agent_input = f"{user_input}\n\nimage_path: {scene_path}\noutput_dir: {temp_dir}"
+        else:
+            agent_input = (
+                f"{user_input}\n\n"
+                f"image_path: {scene_path}\n"
+                + (f"pattern_image_path: {pattern_path}\n" if pattern_path else "")
+                + f"output_dir: {temp_dir}"
+            )
 
     # Show user message
     with st.chat_message("user"):
@@ -315,50 +310,24 @@ if user_input:
 
     # Run agent
     with st.chat_message("assistant"):
-        from agent.agent import build_agent, FALLBACK_MODELS
-        from openai import RateLimitError, NotFoundError, APIStatusError, BadRequestError
+        from agent.agent import build_agent, DEFAULT_MODEL
 
-        env_model = os.environ.get("MODEL_ID", "")
-        models_to_try = (
-            [env_model] + [m for m in FALLBACK_MODELS if m != env_model]
-            if env_model else FALLBACK_MODELS
-        )
-
+        model_id = os.environ.get("MODEL_ID", DEFAULT_MODEL)
         logger = AgentLogger()
         tool_cb = ToolEventCallback(logger)
         result = None
-        last_error = None
 
-        for model_id in models_to_try:
-            logger.model_trying(model_id)
-            try:
-                executor = build_agent(task_mode, model=model_id)
-                result = executor.invoke(
-                    {"input": agent_input},
-                    config={"callbacks": [tool_cb]},
-                )
-                logger.model_ok(model_id)
-                _log.info("[%s] succeeded", model_id)
-                break
-            except (RateLimitError, NotFoundError, BadRequestError) as e:
-                reason = type(e).__name__
-                logger.model_failed(model_id, reason)
-                _log.warning("[%s] FAILED (%s): %s", model_id, reason, e)
-                last_error = e
-                continue
-            except APIStatusError as e:
-                last_error = e
-                if e.status_code in (400, 402, 429, 503):
-                    reason = f"HTTP {e.status_code}"
-                    logger.model_failed(model_id, reason)
-                    _log.warning("[%s] FAILED (%s): %s", model_id, reason, e.message)
-                    continue
-                raise
-            except Exception as e:
-                logger.model_failed(model_id, type(e).__name__)
-                _log.error("[%s] ERROR: %s", model_id, e)
-                last_error = e
-                break
+        logger.model_trying(model_id)
+        try:
+            executor = build_agent(task_mode)
+            result = executor.invoke(
+                {"input": agent_input},
+                config={"callbacks": [tool_cb]},
+            )
+            logger.model_ok(model_id)
+        except Exception as e:
+            _log.error("[%s] ERROR: %s", model_id, e)
+            logger.answer(f"Error: {e}")
 
         if result is not None:
             output = result.get("output", "No answer returned.")
