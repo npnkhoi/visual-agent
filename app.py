@@ -250,11 +250,11 @@ with st.sidebar:
         st.session_state.temp_dir = tempfile.mkdtemp(prefix="visual_agent_", dir=TMP_DIR)
         st.rerun()
 
-    api_key = os.environ.get("OPENROUTER_API_KEY", "")
-    if api_key and api_key != "sk-or-v1-...":
+    api_key = os.environ.get("MINIMAX_API_KEY", "")
+    if api_key and api_key != "your-minimax-api-key":
         st.success("✅ API key loaded")
     else:
-        st.error("❌ OPENROUTER_API_KEY not set — copy .env.example → .env and fill it in")
+        st.error("❌ MINIMAX_API_KEY not set — copy .env.example → .env and fill it in")
 
 # ── Model loading ──────────────────────────────────────────────────────────────
 load_models()
@@ -361,7 +361,13 @@ if user_input:
                 break
 
         if result is not None:
-            logger.answer(result.get("output", "No answer returned."))
+            output = result.get("output", "No answer returned.")
+            if isinstance(output, list):
+                output = " ".join(
+                    block.get("text", "") for block in output
+                    if isinstance(block, dict) and block.get("type") == "text"
+                ) or "No answer returned."
+            logger.answer(output)
         else:
             _log.error("All models failed. Last: %s", last_error)
             logger.answer("Sorry, all models are currently unavailable. Please try again in a moment.")

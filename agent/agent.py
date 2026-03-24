@@ -4,7 +4,7 @@ from typing import Optional
 
 from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 
 # Ordered list of models to try when the primary is unavailable.
 # Free models first, then cheap paid fallbacks.
@@ -73,12 +73,12 @@ def build_agent(task_mode: str = "counting", model: Optional[str] = None) -> Age
         MessagesPlaceholder(variable_name="agent_scratchpad"),
     ])
 
-    resolved_model = model or os.environ.get("MODEL_ID", FALLBACK_MODELS[0])
+    resolved_model = model or os.environ.get("MODEL_ID", "MiniMax-M2.7")
 
-    llm = ChatOpenAI(
+    llm = ChatAnthropic(
         model=resolved_model,
-        openai_api_key=os.environ.get("OPENROUTER_API_KEY", ""),
-        openai_api_base=os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+        api_key=os.environ.get("MINIMAX_API_KEY", ""),
+        base_url=os.environ.get("MINIMAX_BASE_URL", "https://api.minimax.io/anthropic"),
         temperature=0,
         streaming=True,
     )
