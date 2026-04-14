@@ -3,14 +3,13 @@
 # Define environment name
 ENV_NAME="vision_pipeline_env"
 
-echo "[1/6] Creating Conda environment: $ENV_NAME with Python 3.10..."
-conda create -n $ENV_NAME python=3.10 -y
-source $(conda info --base)/etc/profile.d/conda.sh
-conda activate $ENV_NAME
+echo "[1/6] Creating Python venv: $ENV_NAME with Python 3.10..."
+python3.10 -m venv $ENV_NAME
+source $ENV_NAME/bin/activate
 
 echo "[2/6] Installing PyTorch with CUDA support..."
 # Adjust 'cu121' to your specific CUDA version if necessary
-conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia -y
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
 echo "[3/6] Installing core CV and utility dependencies..."
 pip install opencv-python matplotlib pillow numpy scipy tqdm requests
@@ -36,6 +35,6 @@ pip install pycocotools
 
 echo "--------------------------------------------------------"
 echo "Setup Complete!"
-echo "Activate your environment with: conda activate $ENV_NAME"
+echo "Activate your environment with: source $ENV_NAME/bin/activate"
 echo "Note: Ensure you have access to meta-llama/Llama-3.2-8B-Instruct on Hugging Face."
 echo "--------------------------------------------------------"
