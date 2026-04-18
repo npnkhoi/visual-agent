@@ -10,7 +10,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 from transformers import AutoProcessor, AutoModelForZeroShotObjectDetection, pipeline, GenerationConfig
 from tqdm import tqdm
-from curl_cffi import requests
+import httpx
 
 # --- Configuration ---
 MODEL_ID = "IDEA-Research/grounding-dino-tiny"
@@ -23,7 +23,7 @@ NMS_IOU_THRESHOLD = 0.5  # IoU threshold for Non-Maximum Suppression
 print(f"Initializing Grounding DINO on {DEVICE}...")
 processor = AutoProcessor.from_pretrained(MODEL_ID)
 model = AutoModelForZeroShotObjectDetection.from_pretrained(MODEL_ID).to(DEVICE)
-nlp = spacy.load("en_core_web_trf")  # for singularization only
+nlp = spacy.load("en_core_web_sm")  # for singularization only
 
 # Generative extractor for Dino prompts
 print("Initializing Qwen2.5 prompt extractor...")
@@ -37,7 +37,7 @@ extractor = pipeline(
 
 def get_img_paths():
     """Load the dataset metadata."""
-    path = Path("labels/CountBench_filtered.json")
+    path = Path("labels/CountBench_test.json")
     if not path.exists():
         raise FileNotFoundError(f"Label file not found at {path}")
     with open(path, "r", encoding="utf-8") as f:
@@ -45,50 +45,58 @@ def get_img_paths():
     return img_path["database"]
 
 
+import httpx
+
 def download_single_image(data, dir_path, retries=3):
-    """Worker function for parallel image downloading using curl_cffi."""
+    """Worker function for parallel image downloading using httpx."""
     img_url = data.get("image_url")
     if not img_url:
         data["save_path"] = None
         return False
 
     filename = img_url.split("/")[-1].split("?")[0]
+    # Ensure filename isn't empty or weirdly formatted
+    if not filename or len(filename) < 3:
+        filename = f"img_{hash(img_url)}.jpg"
+        
     save_path = Path(dir_path) / filename
     data["save_path"] = str(save_path)
 
     if save_path.exists():
         return True
 
+    # Standard browser-like headers
     headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
     }
 
-    for attempt in range(retries):
-        try:
-            response = requests.get(
-                img_url,
-                headers=headers,
-                impersonate="chrome124",
-                timeout=20,
-                stream=True
-            )
-            response.raise_for_status()
+    # Use a context manager for the client to handle connection pooling
+    with httpx.Client(headers=headers, follow_redirects=True, timeout=20.0) as client:
+        for attempt in range(retries):
+            try:
+                response = client.get(img_url)
+                response.raise_for_status()
 
-            content_type = response.headers.get("Content-Type", "")
-            if not content_type.startswith("image/"):
-                print(f"Not an image for {img_url}: {content_type}")
-                return False
+                # Verify we actually got an image
+                content_type = response.headers.get("Content-Type", "")
+                if "image" not in content_type:
+                    print(f"Skipping: URL did not return an image ({content_type})")
+                    return False
 
-            with open(save_path, "wb") as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
+                with open(save_path, "wb") as f:
+                    f.write(response.content)
 
-            return True
+                return True
 
-        except Exception as e:
-            print(f"Attempt {attempt + 1}/{retries} failed for {img_url}: {e}")
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    print(f"Image not found (404): {img_url}")
+                    break # Don't retry 404s
+                print(f"Attempt {attempt + 1} failed for {img_url}: {e}")
+            except Exception as e:
+                print(f"Attempt {attempt + 1} failed for {img_url}: {e}")
+            
             if attempt < retries - 1:
                 time.sleep(2)
 
