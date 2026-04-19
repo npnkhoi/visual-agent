@@ -269,28 +269,48 @@ class VisionPipeline24GB:
 
     @torch.no_grad()
     def stage_4_amodal_refinement(self, image: Image.Image, heatmap: np.ndarray) -> List[List]:
-        """Uses SAM 2 to convert points into amodal bounding boxes."""
-        peaks = self.get_persistent_peaks(heatmap)
-        if not peaks: return []
-
-        img_array = np.array(image)
-        self.sam2_predictor.set_image(img_array)
+        """Uses Watershed and SAM 2 to convert heatmap clusters into discrete bounding boxes."""
+        
+        # 1. Binarize the heatmap
+        # Using a threshold to create a mask of likely object areas
+        thresh = (heatmap > 0.15).astype(np.uint8) * 255
+        
+        # 2. Distance Transform & Watershed (To separate overlapping spoons)
+        # This creates 'markers' for SAM 2 based on the centers of heatmap clusters
+        dist_transform = cv2.distanceTransform(thresh, cv2.DIST_L2, 5)
+        ret, last_markers = cv2.threshold(dist_transform, 0.5 * dist_transform.max(), 255, 0)
+        last_markers = np.uint8(last_markers)
+        
+        # Find individual peaks to use as SAM 2 points
+        num_labels, labels = cv2.connectedComponents(last_markers)
         
         refined_boxes = []
-        input_points = np.array(peaks)
-        input_labels = np.ones(len(peaks)) # 1 = Foreground
+        img_array = np.array(image)
+        self.sam2_predictor.set_image(img_array)
 
-        # SAM 2 can handle batched point prompts for efficiency
-        masks, scores, _ = self.sam2_predictor.predict(
-            point_coords=input_points[:, None, :],
-            point_labels=input_labels[:, None],
-            multimask_output=False
-        )
+        # 3. Iterate through each separated component
+        for i in range(1, num_labels): # Label 0 is background
+            component_mask = (labels == i).astype(np.uint8)
+            y, x = np.where(component_mask)
+            
+            if len(x) == 0: continue
+            
+            # Use the centroid of the watershed peak as the SAM prompt point
+            cx, cy = int(np.mean(x)), int(np.mean(y))
+            
+            input_points = np.array([[cx, cy]])
+            input_labels = np.array([1]) # Foreground
 
-        for i, mask in enumerate(masks):
-            # The mask here is amodal; it predicts the shape behind occlusions
-            # We convert the binary mask to an axis-aligned bounding box
-            coords = np.argwhere(mask[0])
+            # SAM 2 refinement
+            masks, scores, _ = self.sam2_predictor.predict(
+                point_coords=input_points,
+                point_labels=input_labels,
+                multimask_output=False
+            )
+
+            # Convert resulting mask to Bbox
+            mask = masks[0]
+            coords = np.argwhere(mask)
             if coords.size > 0:
                 ymin, xmin = coords.min(axis=0)
                 ymax, xmax = coords.max(axis=0)
