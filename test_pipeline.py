@@ -29,7 +29,8 @@ from transformers import (
     CLIPProcessor,
     CLIPModel,
     AutoModelForCausalLM,
-    AutoTokenizer
+    AutoTokenizer,
+    AutoConfig
 )
 from torchvision.ops import batched_nms
 
@@ -60,8 +61,10 @@ class VisionPipeline24GB:
         # --- Model 3: DINOv2 (Semantic Search) ---
         self.dino_id = "facebook/dinov2-base"
         self.dinov2_processor = AutoImageProcessor.from_pretrained(self.dino_id)
+        config = AutoConfig.from_pretrained(self.dino_id)
+        config.output_attentions = True
         self.dinov2_model = AutoModel.from_pretrained(
-            self.dino_id, torch_dtype=self.dtype
+            self.dino_id, torch_dtype=self.dtype, config=config,
         ).to(self.device)
 
         # --- Model 4: CLIP (Attribute Filtering) ---
@@ -196,60 +199,200 @@ class VisionPipeline24GB:
         
         return torch.stack([xmin, ymin, xmax, ymax], dim=-1).cpu().numpy().tolist()
 
+    # ============================================================
+    # Stage 3 v2: Multi-scale + SAM-refined seeds + CLIP gating
+    #             + edge gating + iterative seed expansion
+    # ============================================================
+
     @torch.no_grad()
+    def _refine_seeds_with_sam(self, image: Image.Image, seed_boxes: List[List]) -> List[np.ndarray]:
+        """Convert loose GroundingDINO boxes into tight foreground masks."""
+        if not seed_boxes:
+            return []
+        self.sam2_predictor.set_image(np.array(image))
+        masks = []
+        for b in seed_boxes:
+            try:
+                m, scores, _ = self.sam2_predictor.predict(
+                    box=np.array(b, dtype=np.float32),
+                    multimask_output=False,
+                )
+                masks.append(m[0].astype(bool))
+            except Exception:
+                continue
+        return masks
 
-    def stage_3_semantic_search(self, image: Image.Image, seed_boxes: List[List]) -> np.ndarray:
-        # 1. Prepare image for DINOv2
-        inputs = self.dinov2_processor(images=image, return_tensors="pt").to(self.device, dtype=self.dtype)
-        outputs = self.dinov2_model(**inputs)
-        
-        # Extract patch tokens (excluding the CLS token at index 0)
-        # Shape: [1, num_patches, embedding_dim]
-        patch_embeddings = outputs.last_hidden_state[:, 1:, :] 
-        
-        # Calculate grid dimensions (e.g., 16x16 for 224x224 input)
-        num_patches = patch_embeddings.shape[1]
-        grid_size = int(np.sqrt(num_patches))
-        
-        # 2. Extract Seed Embeddings
-        # We map the bounding boxes to the patch grid to find which tokens represent our seeds
-        seed_features = []
+
+    @torch.no_grad()
+    def _clip_relevancy_map(self, image: Image.Image, semantics: dict, out_size: Tuple[int, int]) -> np.ndarray:
+        """Coarse CLIP text-image relevancy via sliding-window crops. Cheap: ~16 crops."""
+        w, h = out_size
+        noun = semantics.get("target_noun", "object")
+        adj = " ".join(semantics.get("adjectives", []))
+        pos_prompt = f"a photo of a {adj} {noun}".strip()
+        neg_prompt = "a photo of background or empty space"
+
+        # 4x4 grid of overlapping crops
+        grid = 4
+        cw, ch = int(w / grid * 1.5), int(h / grid * 1.5)
+        sx, sy = (w - cw) // (grid - 1), (h - ch) // (grid - 1)
+
+        crops, centers = [], []
+        for i in range(grid):
+            for j in range(grid):
+                x0, y0 = j * sx, i * sy
+                x1, y1 = min(x0 + cw, w), min(y0 + ch, h)
+                crops.append(image.crop((x0, y0, x1, y1)))
+                centers.append(((x0 + x1) // 2, (y0 + y1) // 2))
+
+        inputs = self.clip_processor(
+            text=[pos_prompt, neg_prompt], images=crops,
+            return_tensors="pt", padding=True
+        ).to(self.device, dtype=self.dtype)
+        outputs = self.clip_model(**inputs)
+        probs = outputs.logits_per_image.softmax(dim=1).cpu().float().numpy()[:, 0]  # pos prob
+
+        # Scatter probs onto a coarse map, then smooth/upsample
+        coarse = np.zeros((grid, grid), dtype=np.float32)
+        for idx, (cx, cy) in enumerate(centers):
+            i, j = idx // grid, idx % grid
+            coarse[i, j] = probs[idx]
+        rel = cv2.resize(coarse, (w, h), interpolation=cv2.INTER_CUBIC)
+        rel = cv2.GaussianBlur(rel, (51, 51), 0)
+        if rel.max() > 0:
+            rel = (rel - rel.min()) / (rel.max() - rel.min() + 1e-8)
+        return rel
+
+
+    @torch.no_grad()
+    def _dino_sim_at_scale(
+        self,
+        image: Image.Image,
+        seed_masks: List[np.ndarray],
+        input_res: int,
+    ) -> np.ndarray:
+        """Single-scale contrastive DINOv2 similarity map using mask-interior patches."""
+        inputs = self.dinov2_processor(
+            images=image, size={"height": input_res, "width": input_res}, return_tensors="pt"
+        ).to(self.device, dtype=self.dtype)
+        outputs = self.dinov2_model(**inputs, output_attentions=True)
+
+        feats = outputs.last_hidden_state[:, 1:, :]  # [1, N, D]
+        N = feats.shape[1]
+        G = int(np.sqrt(N))
         w, h = image.size
-        for box in seed_boxes:
-            xmin, ymin, xmax, ymax = box
-            # Convert pixel coords to grid coords
-            col_start, col_end = int(xmin * grid_size / w), int(xmax * grid_size / w)
-            row_start, row_end = int(ymin * grid_size / h), int(ymax * grid_size / h)
-            
-            for r in range(row_start, min(row_end + 1, grid_size)):
-                for c in range(col_start, min(col_end + 1, grid_size)):
-                    idx = r * grid_size + c
-                    seed_features.append(patch_embeddings[0, idx])
 
-        if not seed_features:
-            return np.zeros((h, w))
+        # Build seed_mask from SAM masks (mask-interior only → pure foreground prototype)
+        seed_mask = torch.zeros(N, dtype=torch.bool, device=self.device)
+        for sam_mask in seed_masks:
+            small = cv2.resize(sam_mask.astype(np.uint8), (G, G), interpolation=cv2.INTER_AREA)
+            seed_mask |= torch.from_numpy(small > 0).flatten().to(self.device)
 
-        # Average the seed features to create a 'target' descriptor
-        target_embedding = torch.stack(seed_features).mean(dim=0, keepdim=True) # [1, dim]
-        
-        # 3. Compute Cosine Similarity
-        # Normalize for cosine similarity
-        patch_embeddings_norm = torch.nn.functional.normalize(patch_embeddings, dim=-1)
-        target_embedding_norm = torch.nn.functional.normalize(target_embedding, dim=-1)
-        
-        # Similarity map: [1, num_patches]
-        similarity = torch.matmul(patch_embeddings_norm, target_embedding_norm.T).squeeze()
-        
-        # Reshape and upscale to original image size
-        heatmap = similarity.reshape(grid_size, grid_size).cpu().float().numpy()
-        heatmap = cv2.resize(heatmap, image.size, interpolation=cv2.INTER_CUBIC)
-        
-        # Optional: ReLU to remove negative correlations and normalize to [0, 1]
-        heatmap = np.maximum(heatmap, 0)
-        if heatmap.max() > 0:
-            heatmap /= heatmap.max()
-            
+        if seed_mask.sum() == 0:
+            return np.zeros((h, w), dtype=np.float32)
+
+        p = torch.nn.functional.normalize(feats[0], dim=-1)
+        pos = torch.nn.functional.normalize(feats[0, seed_mask], dim=-1)
+
+        # Max-sim over all seed patches (preserves appearance diversity)
+        sim_pos = (p @ pos.T).max(dim=-1).values  # [N]
+
+        # Data-driven negative prototype from bottom-20% positively-similar patches
+        k_neg = max(10, int(0.2 * N))
+        neg_idx = torch.topk(sim_pos, k=k_neg, largest=False).indices
+        neg = torch.nn.functional.normalize(p[neg_idx].mean(0, keepdim=True), dim=-1)
+        sim_neg = (p @ neg.T).squeeze(-1)
+
+        contrast = sim_pos - sim_neg
+        contrast = (contrast - contrast.min()) / (contrast.max() - contrast.min() + 1e-8)
+        sharp = torch.pow(contrast, 1.8)
+
+        hm = sharp.reshape(G, G).cpu().float().numpy()
+        hm = cv2.resize(hm, (w, h), interpolation=cv2.INTER_LANCZOS4)
+        return hm
+
+
+    @torch.no_grad()
+    def stage_3_semantic_search(
+        self,
+        image: Image.Image,
+        seed_boxes: List[List],
+        semantics: dict = None,
+        iterations: int = 2,
+    ) -> np.ndarray:
+        """
+        Multi-scale DINOv2 similarity with:
+        - SAM-refined foreground-only seeds
+        - CLIP text-image relevancy gating
+        - Edge/texture gating
+        - Iterative seed expansion (peaks from pass 1 become seeds for pass 2)
+        """
+        w, h = image.size
+        if not seed_boxes:
+            return np.zeros((h, w), dtype=np.float32)
+
+        # ---- 1. Tight foreground masks from GroundingDINO boxes ----
+        seed_masks = self._refine_seeds_with_sam(image, seed_boxes)
+        if not seed_masks:
+            # Fallback: treat each box as a coarse rectangular mask
+            seed_masks = []
+            for b in seed_boxes:
+                m = np.zeros((h, w), dtype=bool)
+                x0, y0, x1, y1 = map(int, b)
+                m[max(0, y0):min(h, y1), max(0, x0):min(w, x1)] = True
+                seed_masks.append(m)
+
+        # ---- 2. Edge-density gate (suppresses flat regions like sky/paper) ----
+        gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
+        edges = np.abs(cv2.Laplacian(gray, cv2.CV_32F))
+        edge_density = cv2.GaussianBlur(edges, (31, 31), 0)
+        if edge_density.max() > 0:
+            edge_density = (edge_density - edge_density.min()) / (edge_density.max() - edge_density.min() + 1e-8)
+        edge_gate = 0.3 + 0.7 * edge_density  # never fully zero out
+
+        # ---- 3. Optional CLIP relevancy gate ----
+        if semantics is not None:
+            clip_rel = self._clip_relevancy_map(image, semantics, (w, h))
+            clip_gate = 0.4 + 0.6 * clip_rel
+        else:
+            clip_gate = np.ones((h, w), dtype=np.float32)
+
+        def _compute(masks):
+            maps = []
+            for res in (392, 518, 714):       # 28x28, 37x37, 51x51 grids
+                maps.append(self._dino_sim_at_scale(image, masks, res))
+            hm = np.mean(maps, axis=0)
+            hm = hm * edge_gate * clip_gate
+            hm = cv2.GaussianBlur(hm, (11, 11), 0)
+            if hm.max() > 0:
+                hm = (hm - hm.min()) / (hm.max() - hm.min() + 1e-8)
+            return hm
+
+        # ---- 4. Iterative refinement: use pass-1 peaks as extra seeds ----
+        heatmap = _compute(seed_masks)
+
+        for _ in range(max(0, iterations - 1)):
+            peaks = self.get_persistent_peaks(heatmap, threshold=0.45)[:8]
+            if not peaks:
+                break
+            extra_boxes = []
+            # Size heuristic: use the median seed-mask size to build pseudo-boxes
+            med_area = np.median([m.sum() for m in seed_masks]) if seed_masks else (w * h * 0.01)
+            r = max(15, int(np.sqrt(med_area) * 0.6))
+            for (x, y) in peaks:
+                extra_boxes.append([max(0, x - r), max(0, y - r),
+                                    min(w, x + r), min(h, y + r)])
+            extra_masks = self._refine_seeds_with_sam(image, extra_boxes)
+            if not extra_masks:
+                break
+            combined_masks = seed_masks + extra_masks
+            new_hm = _compute(combined_masks)
+            # Blend: trust old 40%, new 60% (new has more evidence)
+            heatmap = 0.4 * heatmap + 0.6 * new_hm
+            seed_masks = combined_masks
+
         return heatmap
+
     
     def get_persistent_peaks(self, heatmap: np.ndarray, threshold: float = 0.15) -> List[Tuple[int, int]]:
         """Identifies stable local maxima using topological prominence."""
@@ -368,7 +511,7 @@ class VisionPipeline24GB:
         self.draw_boxes_and_save(image, seeds, img_out_dir / "stage_2_seeds.jpg", (255, 0, 0), "Seeds")
 
         # --- Stage 3: Semantic Search (Heatmap) ---
-        heatmap = self.stage_3_semantic_search(image, seeds)
+        heatmap = self.stage_3_semantic_search(image, seeds, semantics=semantics, iterations=2)
         # CALL SAVING FUNCTION FOR HEATMAP
         self.draw_heatmap_and_save(image, heatmap, img_out_dir / "stage_3_heatmap.jpg")
 
