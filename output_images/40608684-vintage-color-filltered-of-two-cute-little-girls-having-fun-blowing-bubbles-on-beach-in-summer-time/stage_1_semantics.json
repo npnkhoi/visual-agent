@@ -1,0 +1,14 @@
+{
+    "query": "Kids playing beach: Vintage color filltered of [MASK] cute little girls having fun blowing bubbles on beach in summer time Stock Photo",
+    "extracted": {
+        "target_noun": "girls",
+        "adjectives": [
+            "cute",
+            "little"
+        ],
+        "verbs": [
+            "blowing bubbles",
+            "having fun"
+        ]
+    }
+}

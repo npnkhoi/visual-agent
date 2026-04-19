@@ -13,6 +13,8 @@ from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 import sys
 import os
+from hydra.core.global_hydra import GlobalHydra
+from hydra import initialize_config_dir
 
 # Add the root of your SAM2 clone to the system path
 sam2_root = os.path.abspath("segment-anything-2")
@@ -70,8 +72,24 @@ class VisionPipeline24GB:
         ).to(self.device)
 
         # Model 5: SAM2
-        self.sam2_checkpoint = "checkpoints/sam2.1_hiera_large.pt"
+        # 1. Define absolute paths to avoid Windows pathing confusion
+        project_root = os.getcwd() # This is 'visual-agent'
+        sam2_dir = os.path.join(project_root, "segment-anything-2")
+        config_path = os.path.join(sam2_dir, "sam2", "configs")
+
+        # 2. Ensure Python can find the 'sam2' module
+        if sam2_dir not in sys.path:
+            sys.path.append(sam2_dir)
+
+        # 3. FORCE Hydra to look in the correct folder
+        # We clear existing Hydra instances to prevent conflicts
+        GlobalHydra.instance().clear()
+        initialize_config_dir(config_dir=config_path, version_base="1.2")
+
+        # 4. Set your variables
+        self.sam2_checkpoint = os.path.join(sam2_dir, "checkpoints", "sam2.1_hiera_large.pt")
         self.model_cfg = "sam2.1/sam2.1_hiera_l.yaml"
+
         self.sam2_model = build_sam2(self.model_cfg, self.sam2_checkpoint, device=self.device)
         self.sam2_predictor = SAM2ImagePredictor(self.sam2_model)
 

@@ -3,3 +3,4 @@ Python	Run py -3.13 --version in CMD.
 Git	Run git --version in CMD.
 VRAM	Open Task Manager > Performance > GPU to check "Dedicated GPU Memory".
 C++ Compiler	Ensure cl.exe is available or Visual Studio 2022 is installed.
+login to huggingface

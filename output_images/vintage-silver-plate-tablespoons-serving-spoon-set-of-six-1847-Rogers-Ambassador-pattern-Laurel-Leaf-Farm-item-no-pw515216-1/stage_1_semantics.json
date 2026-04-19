@@ -1,0 +1,15 @@
+{
+    "query": "Vintage silver plate tablespoons, serving spoon set of [MASK] 1847 Rogers pattern",
+    "extracted": {
+        "target_noun": "tablespoon",
+        "adjectives": [
+            "vintage",
+            "silver",
+            "plate"
+        ],
+        "verbs": [
+            "serving",
+            "set"
+        ]
+    }
+}

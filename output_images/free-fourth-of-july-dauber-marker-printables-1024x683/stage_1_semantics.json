@@ -1,0 +1,15 @@
+{
+    "query": "A preview of [MASK] printable dot marker coloring pages. Each page has a large 4th of July themed image with dots to color in with a dauber style marker.",
+    "extracted": {
+        "target_noun": "marker",
+        "adjectives": [
+            "printable",
+            "dot",
+            "dauber style"
+        ],
+        "verbs": [
+            "coloring",
+            "color in"
+        ]
+    }
+}

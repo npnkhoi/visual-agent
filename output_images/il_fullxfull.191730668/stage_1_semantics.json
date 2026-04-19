@@ -1,0 +1,10 @@
+{
+    "query": "City prints: Set of [MASK] big prints - $150.00 USD",
+    "extracted": {
+        "target_noun": "print",
+        "adjectives": [
+            "big"
+        ],
+        "verbs": []
+    }
+}

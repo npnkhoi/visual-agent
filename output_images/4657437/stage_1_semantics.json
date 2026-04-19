@@ -1,0 +1,11 @@
+{
+    "query": "Set of [MASK] arrows in all directions vector",
+    "extracted": {
+        "target_noun": "arrow",
+        "adjectives": [],
+        "verbs": [
+            "in all directions",
+            "in a vector"
+        ]
+    }
+}
