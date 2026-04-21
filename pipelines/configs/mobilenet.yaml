@@ -1,0 +1,21 @@
+name: mobilenet
+wandb_enabled: false
+loader:
+  source: labels/cb_412.json
+  kwargs:
+    image_dir: data/
+models: {}
+stages:
+  - inputs:
+      - [Image, human]
+    output: DetectionResult
+    processor: MobileNetDetectProcessor
+  - inputs:
+      - [DetectionResult, model]
+    output: VLMCount
+    processor: MaxClassCountProcessor
+  - inputs:
+      - [Answer, human]
+      - [VLMCount, model]
+    output: EvalResult
+    processor: EvaluatorProcessor

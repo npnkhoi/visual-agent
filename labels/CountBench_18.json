@@ -1,0 +1,128 @@
+[
+  {
+    "question_id": 532,
+    "image_url": "https://image.shutterstock.com/image-photo/lifestyle-selfie-portrait-two-young-260nw-1721529655.jpg",
+    "question": "Lifestyle selfie portrait of [MASK] young positive woman having fun and making selfie",
+    "answer": 2,
+    "target_noun": "young positive woman"
+  },
+  {
+    "question_id": 69,
+    "image_url": "https://us.123rf.com/450wm/veida/veida1511/veida151100004/49103276-set-two-banners-of-green-spruce-with-computer-and-motherboard-elements-for-technology-concept.jpg?ver=6",
+    "question": "postcard background: set [MASK] banners of green spruce with computer and motherboard elements for technology concept",
+    "answer": 2,
+    "target_noun": "banners"
+  },
+  {
+    "question_id": 11,
+    "image_url": "https://thumb7.shutterstock.com/image-photo/stock-photo-three-fresh-pure-white-waterlilies-floating-on-clear-blue-water-450w-4210918.jpg",
+    "question": "[MASK] fresh pure white waterlilies floating on clear blue water - stock photo",
+    "answer": 3,
+    "target_noun": "fresh pure white waterlilies"
+  },
+  {
+    "question_id": 199,
+    "image_url": "https://images.squarespace-cdn.com/content/v1/5240bcd2e4b09847f93e6d84/1518584698524-JTW14U9NH18036QC1QGN/ke17ZwdGBToddI8pDm48kLkXF2pIyv_F2eUT9F60jBl7gQa3H78H3Y0txjaiv_0fDoOvxcdMmMKkDsyUqMSsMWxHk725yiiHCCLfrh8O1z4YTzHvnKhyp6Da-NYroOW3ZGjoBKy3azqku80C789l0iyqMbMesKd95J-X4EagrgU9L3Sa3U8cogeb0tjXbfawd0urKshkc5MgdBeJmALQKw/threesellwoodoptions.jpg",
+    "question": "The [MASK] Sellwood finish options for Sisi Photography wedding collections - Teal, white and black.",
+    "answer": 3,
+    "target_noun": "The Sellwood finish options"
+  },
+  {
+    "question_id": 133,
+    "image_url": "http://corduroyorange.com/wp-content/uploads/2006/12/all_four.jpg",
+    "question": "all [MASK] types of crisps",
+    "answer": 4,
+    "target_noun": "all types"
+  },
+  {
+    "question_id": 128,
+    "image_url": "http://images.selfridges.com/is/image/selfridges/294-81007205-G88719991_M?$PDP_ALSOLIKE_ALL_MAIN$",
+    "question": "LSA Wine set of [MASK] stemless red wine glasses",
+    "answer": 4,
+    "target_noun": "stemless red wine glasses"
+  },
+  {
+    "question_id": 145,
+    "image_url": "http://images.football.co.uk/630x472/c840756c6a6e2305dc2f543af9d74b4d.jpg",
+    "question": "Liverpool's next [MASK] rising academy stars to watch",
+    "answer": 5,
+    "target_noun": "Liverpool 's next rising academy stars"
+  },
+  {
+    "question_id": 89,
+    "image_url": "https://agsurfer.blob.core.windows.net/apei/German1.jpg",
+    "question": "[MASK] lederhosen attired polka musicians with instruments",
+    "answer": 5,
+    "target_noun": "lederhosen attired polka musicians"
+  },
+  {
+    "question_id": 531,
+    "image_url": "http://theatre1234.com/wp-content/uploads/2014/03/dice.jpg",
+    "question": "[MASK] dice of various shapes and sizes.",
+    "answer": 6,
+    "target_noun": "dice"
+  },
+  {
+    "question_id": 401,
+    "image_url": "https://d2mpxrrcad19ou.cloudfront.net/item_images/1254285/12071055_bukobject.jpg",
+    "question": "A set of [MASK] enamelled, gilt silver espresso spoons, tillander, helsinki 1955-56.",
+    "answer": 6,
+    "target_noun": "enamelled , gilt silver espresso spoons"
+  },
+  {
+    "question_id": 86,
+    "image_url": "http://www.jacksonphotography.com/wp-content/uploads/2012/08/Woodholme-Wedding-12.jpg",
+    "question": "[MASK] groomsmen at the ceremony",
+    "answer": 7,
+    "target_noun": "groomsmen"
+  },
+  {
+    "question_id": 447,
+    "image_url": "https://cdn.shopify.com/s/files/1/0073/6090/5271/products/263460-03733de343d94841ae8fb684fd027156_1024x.jpg?v=1553798893",
+    "question": "Set of [MASK] bowls by Gunnar",
+    "answer": 7,
+    "target_noun": "bowls"
+  },
+  {
+    "question_id": 376,
+    "image_url": "https://t3.ftcdn.net/jpg/01/74/25/14/240_F_174251470_RUr2c283nVXgDLUF9b3e67eF7BsIvGAC.jpg",
+    "question": "[MASK] different electric lamps isolated on white",
+    "answer": 8,
+    "target_noun": "different electric lamps"
+  },
+  {
+    "question_id": 13,
+    "image_url": "https://images.squarespace-cdn.com/content/5314ba68e4b0e179eb021606/1433980025405-YL4UJVMLNZJH7PSGIRTI/BNOW_Merced_06Web.jpg?format=1000w&content-type=image%2Fjpeg",
+    "question": "A Barn Owl laid [MASK] eggs in this box - the center one is hatching!",
+    "answer": 8,
+    "target_noun": "eggs"
+  },
+  {
+    "question_id": 19,
+    "image_url": "https://us.123rf.com/450wm/elenaphotos21/elenaphotos211403/elenaphotos21140300021/26392942-set-of-colorful-nine-aum-in-white-background.jpg",
+    "question": "Set of colorful [MASK] aum in white background photo",
+    "answer": 9,
+    "target_noun": "colorful aum"
+  },
+  {
+    "question_id": 58,
+    "image_url": "https://cdn10.bigcommerce.com/s-43boq/products/194/images/382/Redleg_Legends_Sample_Art__09040.1479329023.500.659.jpg?c=2",
+    "question": "Digital illustration of [MASK] Cincinnati's All-Time Reds Greats, Frank, Chuck, Gus, Wally, Ernie, Paul, Ted, Ed, and Johnny!!",
+    "answer": 9,
+    "target_noun": "Cincinnati 's All - Time Reds Greats"
+  },
+  {
+    "question_id": 184,
+    "image_url": "https://i.pinimg.com/736x/48/f3/6d/48f36dce14a469d2caf20cafd0d8c559.jpg",
+    "question": "This is an Instant Download PDF Cross Stitch Pattern.  The complete Cacti and Succulents set in (optional)* geometric terrariums**  Patterns: [MASK]",
+    "answer": 10,
+    "target_noun": "Patterns"
+  },
+  {
+    "question_id": 213,
+    "image_url": "https://cdn11.bigcommerce.com/s-70184/images/stencil/608x608/products/1270/7423/blue-10-sided-dice-set__50823.1530132370.jpg?c=2",
+    "question": "d10 set of [MASK] - Blue",
+    "answer": 10,
+    "target_noun": "dice"
+  }
+]

@@ -1,0 +1,22 @@
+name: gdino_tiny
+wandb_enabled: false
+loader:
+  source: labels/cb_412.json
+  kwargs:
+    image_dir: data/
+models: {}
+stages:
+  - inputs:
+      - [TargetNoun, human]
+    output: DinoPrompt
+    processor: OraclePromptProcessor
+  - inputs:
+      - [Image, human]
+      - [DinoPrompt, model]
+    output: DetectionResult
+    processor: GroundingDinoProcessor
+  - inputs:
+      - [Answer, human]
+      - [DetectionResult, model]
+    output: EvalResult
+    processor: EvaluatorProcessor

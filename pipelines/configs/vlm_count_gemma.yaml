@@ -1,0 +1,20 @@
+name: vlm_count_gemma
+wandb_enabled: false
+loader:
+  source: labels/cb_412.json
+  kwargs:
+    image_dir: data/
+models: {}
+stages:
+  - inputs:
+      - [Image, human]
+      - [TargetNoun, human]
+    output: VLMCount
+    processor: VLMCountProcessor
+    kwargs:
+      model_id: "google/gemma-4-E4B"
+  - inputs:
+      - [Answer, human]
+      - [VLMCount, model]
+    output: EvalResult
+    processor: EvaluatorProcessor

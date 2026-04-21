@@ -1,0 +1,25 @@
+name: gdino_base_prompt_extract
+wandb_enabled: false
+loader:
+  source: labels/cb_412.json
+  kwargs:
+    image_dir: data/
+models: {}
+stages:
+  - inputs:
+      - [Question, human]
+    output: DinoPrompt
+    processor: DinoPromptProcessor
+  - inputs:
+      - [Image, human]
+      - [DinoPrompt, model]
+    output: DetectionResult
+    processor: GroundingDinoProcessor
+    kwargs:
+      model_id: "IDEA-Research/grounding-dino-base"
+  - inputs:
+      - [Answer, human]
+      - [DetectionResult, model]
+    output: EvalResult
+    processor: EvaluatorProcessor
+
