@@ -1,112 +1,62 @@
 # Visual Agent
 
-Agentic computer vision system for **object counting** and **object search**, using:
-
-- **Grounding DINO** — zero-shot object detection
-- **CLIP ViT-L/14** — semantic verification and image similarity
-- **LangChain** — tool-calling agent loop (ReAct pattern)
-- **MiniMax M2.7** — LLM orchestrator (via MiniMax API)
-- **Streamlit** — chat UI with live tool call visibility
+Pipeline framework for **object counting** benchmarks, built on [agentflow](https://github.com/npnkhoi/agentflow).
 
 ---
 
 ## Setup
 
-### 1. Clone and create the conda environment
-
 ```bash
-git clone <repo-url>
+git clone git@github.com:npnkhoi/visual-agent.git
 cd visual-agent
 conda create -n visual-agent python=3.11 -y
 conda activate visual-agent
 pip install -r requirements.txt
+pip install git+https://github.com/npnkhoi/agentflow.git
 ```
 
-### 2. Configure API key
+---
+
+## Running a pipeline
 
 ```bash
-cp .env.example .env
+conda run -n visual-agent python pipelines/_runner.py pipelines/configs/<name>.yaml
 ```
 
-Edit `.env` and fill in your MiniMax API key:
+Output is written to `output/<pipeline-name>/`. If the last stage is `EvalResult`, accuracy is printed at the end.
 
-```
-MINIMAX_API_KEY=your-minimax-api-key
-```
+---
 
-`MODEL_ID` defaults to `MiniMax-M2.7`. Override it by setting `MODEL_ID` in `.env`.
+## Configs
 
-### 3. Run
+All configs live in `pipelines/configs/`. Each YAML defines a loader, stages, and processors.
+
+| Config | Description |
+|---|---|
+| `gdino_tiny.yaml` | Grounding DINO tiny, oracle noun prompt |
+| `gdino_tiny_prompt_extract.yaml` | Grounding DINO tiny, LLM noun extraction |
+| `gdino_base.yaml` | Grounding DINO base, oracle noun prompt |
+| `gdino_base_prompt_extract.yaml` | Grounding DINO base, LLM noun extraction |
+| `mobilenet.yaml` | SSDLite MobileNetV3, max-class heuristic |
+| `vlm_count_qwen.yaml` | Qwen2.5-VL-7B direct counting |
+| `vlm_count_gemma.yaml` | Gemma-4 direct counting |
+
+---
+
+## Viewer
+
+Browse pipeline outputs in a Streamlit app:
 
 ```bash
-conda run -n visual-agent streamlit run app.py
-```
-
-Models are downloaded from HuggingFace on first run (~1.3 GB total, cached automatically).
-
----
-
-## Usage
-
-### Object Counting
-
-1. Select **Object Counting** in the sidebar
-2. Upload a scene image
-3. Type a question: `How many people are in this image?`
-
-The agent will:
-1. Detect candidates with Grounding DINO
-2. Verify detections with CLIP
-3. Annotate verified objects with lime boxes
-4. Report the count
-
-### Object Search
-
-1. Select **Object Search** in the sidebar
-2. Upload a scene image and a reference/pattern image
-3. Type a question: `Find this person in the crowd`
-
-The agent will:
-1. Detect all relevant objects in the scene
-2. Rank them by CLIP similarity to the reference image
-3. Show a grid of the top matches with similarity scores
-
----
-
-## Project Structure
-
-```
-visual-agent/
-├── app.py                        # Streamlit UI
-├── agent/
-│   ├── agent.py                  # LangChain agent factory
-│   └── tools/
-│       ├── model_registry.py     # Singleton lazy loader for GDINO + CLIP
-│       ├── detection_tools.py    # Grounding DINO tool
-│       ├── similarity_tools.py   # CLIP verify + rank tools
-│       └── image_tools.py        # Grid and annotation tools
-├── test_count_people.py          # Unit test: vision pipeline only
-├── test_agent_count_people.py    # End-to-end test: full agent + LLM
-├── requirements.txt
-└── .env.example
+conda run -n visual-agent streamlit run pipelines/viewer.py
 ```
 
 ---
 
-## Tests
+## Data
+
+Images live in `data/`. The canonical dataset is `pipelines/data/countbench.json` (412 items), built from CountBench via:
 
 ```bash
-# Unit test — runs Grounding DINO + CLIP directly, no LLM needed
-conda run -n visual-agent python test_count_people.py
-
-# End-to-end test — runs the full agent (requires MINIMAX_API_KEY)
-conda run -n visual-agent python test_agent_count_people.py
+conda run -n visual-agent python scripts/0418_prepare_countbench.py
 ```
-
----
-
-## Notes
-
-- All temporary files (crops, annotated images) are saved to `./tmp/` and gitignored
-- Vision models run on GPU if available, otherwise CPU
-- CLIP similarity thresholds: `0.15` for people, `0.25` for other objects
