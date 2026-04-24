@@ -41,6 +41,23 @@ class VLMCount(BaseModel):
     count: int
 
 
+class MaskScores(BaseModel):
+    scores: dict[str, float]   # number word → CLIP cosine similarity
+
+
+class LabeledImage(BaseModel):
+    path: str
+    num_points: int
+    points: list[list[float]] = []       # NMS-filtered pixel coords [[x,y], ...]
+    image_size: list[int] = []           # [W, H]
+    original_image_path: str = ""
+
+
+class VLMGroupCount(BaseModel):
+    count: int
+    groups: list[list[int]]  # each inner list = point IDs belonging to one object
+
+
 class EvalResult(BaseModel):
     predicted: int
     ground_truth: int

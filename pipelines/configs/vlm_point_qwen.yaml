@@ -1,0 +1,22 @@
+name: vlm_point_qwen
+wandb_enabled: false
+loader:
+  source: labels/cb_412.json
+  kwargs:
+    image_dir: data/
+models: {}
+stages:
+  - inputs:
+      - [Image, human]
+      - [TargetNoun, human]
+    output: ObjectCoordinates
+    processor: VLMLocateProcessor
+  - inputs:
+      - [ObjectCoordinates, model]
+    output: VLMCount
+    processor: CoordinateCountProcessor
+  - inputs:
+      - [Answer, human]
+      - [VLMCount, model]
+    output: EvalResult
+    processor: EvaluatorProcessor

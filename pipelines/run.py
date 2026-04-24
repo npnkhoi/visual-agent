@@ -20,7 +20,7 @@ from agentflow.pipeline import Pipeline
 from agentflow.typing.config import Config
 
 # --- Register types ---
-from pipelines.types import DinoPrompt, DetectionResult, SAMMasks, ObjectCoordinates, EvalResult, VLMCount
+from pipelines.types import DinoPrompt, DetectionResult, SAMMasks, ObjectCoordinates, EvalResult, VLMCount, LabeledImage, VLMGroupCount, MaskScores
 
 Pipeline.register_type("DinoPrompt", DinoPrompt)
 Pipeline.register_type("DetectionResult", DetectionResult)
@@ -28,6 +28,9 @@ Pipeline.register_type("SAMMasks", SAMMasks)
 Pipeline.register_type("ObjectCoordinates", ObjectCoordinates)
 Pipeline.register_type("EvalResult", EvalResult)
 Pipeline.register_type("VLMCount", VLMCount)
+Pipeline.register_type("LabeledImage", LabeledImage)
+Pipeline.register_type("VLMGroupCount", VLMGroupCount)
+Pipeline.register_type("MaskScores", MaskScores)
 
 # --- Register processors ---
 from pipelines.processors.dino_prompt import DinoPromptProcessor
@@ -42,6 +45,13 @@ from pipelines.processors.sam_point import SAMPointProcessor
 from pipelines.processors.evaluator import EvaluatorProcessor
 from pipelines.processors.mobilenet_detect import MobileNetDetectProcessor
 from pipelines.processors.max_class_count import MaxClassCountProcessor
+from pipelines.processors.coordinate_count import CoordinateCountProcessor
+from pipelines.processors.mask_center import MaskCenterProcessor
+from pipelines.processors.labeled_image import LabeledImageProcessor
+from pipelines.processors.vlm_group_count import VLMGroupCountProcessor
+from pipelines.processors.clip_mask_score import CLIPMaskScoreProcessor
+from pipelines.processors.vlm_mask_score import VLMMaskScoreProcessor
+from pipelines.processors.best_count import BestCountProcessor
 
 Pipeline.register_processor("DinoPromptProcessor", DinoPromptProcessor)
 Pipeline.register_processor("OraclePromptProcessor", OraclePromptProcessor)
@@ -55,6 +65,13 @@ Pipeline.register_processor("SAMPointProcessor", SAMPointProcessor)
 Pipeline.register_processor("EvaluatorProcessor", EvaluatorProcessor)
 Pipeline.register_processor("MobileNetDetectProcessor", MobileNetDetectProcessor)
 Pipeline.register_processor("MaxClassCountProcessor", MaxClassCountProcessor)
+Pipeline.register_processor("CoordinateCountProcessor", CoordinateCountProcessor)
+Pipeline.register_processor("MaskCenterProcessor", MaskCenterProcessor)
+Pipeline.register_processor("LabeledImageProcessor", LabeledImageProcessor)
+Pipeline.register_processor("VLMGroupCountProcessor", VLMGroupCountProcessor)
+Pipeline.register_processor("CLIPMaskScoreProcessor", CLIPMaskScoreProcessor)
+Pipeline.register_processor("VLMMaskScoreProcessor", VLMMaskScoreProcessor)
+Pipeline.register_processor("BestCountProcessor", BestCountProcessor)
 
 # --- Load config ---
 yaml_name = sys.argv[1]

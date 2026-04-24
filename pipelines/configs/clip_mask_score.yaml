@@ -1,0 +1,22 @@
+name: clip_mask_score
+wandb_enabled: false
+loader:
+  source: labels/cb_412.json
+  kwargs:
+    image_dir: data/
+models: {}
+stages:
+  - inputs:
+      - [Image, human]
+      - [Question, human]
+    output: MaskScores
+    processor: CLIPMaskScoreProcessor
+  - inputs:
+      - [MaskScores, model]
+    output: VLMCount
+    processor: BestCountProcessor
+  - inputs:
+      - [Answer, human]
+      - [VLMCount, model]
+    output: EvalResult
+    processor: EvaluatorProcessor

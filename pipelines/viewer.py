@@ -72,6 +72,8 @@ def _visual_type(data: dict) -> str | None:
         and len(data["points"][0]) == 2
     ):
         return "points"
+    if isinstance(data.get("path"), str) and Path(data["path"]).is_file():
+        return "labeled_image"
     return None
 
 
@@ -170,6 +172,10 @@ def _show_visual_buttons(
     key_prefix: str,
 ) -> None:
     """Render the overlay button(s) for a JSON blob that has visual data."""
+    if vtype == "labeled_image":
+        st.image(data["path"], use_container_width=True)
+        return
+
     if img_path is None or not img_path.exists():
         st.caption("_(image not found for overlay)_")
         return

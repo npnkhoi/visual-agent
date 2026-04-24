@@ -9,3 +9,4 @@ data/
 output/
 tmp/
 models/
+pipelines/configs/beta
