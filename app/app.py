@@ -192,7 +192,7 @@ class ToolEventCallback(BaseCallbackHandler):
 
 @st.cache_resource(show_spinner="Loading vision models (first run may take a few minutes)...")
 def load_models():
-    from agent.tools.model_registry import registry
+    from app.agent.tools.model_registry import registry
     registry.ensure_all()
     return registry
 
@@ -261,7 +261,7 @@ load_models()
 
 # ── Main area ──────────────────────────────────────────────────────────────────
 st.title("👁️ Visual Agent")
-from agent.agent import DEFAULT_MODEL as _DEFAULT_MODEL
+from app.agent.agent import DEFAULT_MODEL as _DEFAULT_MODEL
 _default_model = os.environ.get("MODEL_ID", _DEFAULT_MODEL)
 st.caption(
     f"Mode: **{'Object Counting' if task_mode == 'counting' else 'Object Search'}** | "
@@ -310,7 +310,7 @@ if user_input:
 
     # Run agent
     with st.chat_message("assistant"):
-        from agent.agent import build_agent, DEFAULT_MODEL
+        from app.agent.agent import build_agent, DEFAULT_MODEL
 
         model_id = os.environ.get("MODEL_ID", DEFAULT_MODEL)
         logger = AgentLogger()

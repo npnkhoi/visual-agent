@@ -17,7 +17,7 @@ if not os.path.exists(IMAGE_PATH):
 from dotenv import load_dotenv
 load_dotenv()
 
-from agent.agent import build_agent, DEFAULT_MODEL
+from app.agent.agent import build_agent, DEFAULT_MODEL
 
 prompt = (
     f"How many people are in this image?\n\n"

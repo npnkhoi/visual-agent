@@ -22,7 +22,7 @@ print()
 
 # ── Step 1: Grounding DINO detection ──────────────────────────────────────────
 print("Step 1 — Grounding DINO: detecting 'person . people'...")
-from agent.tools.detection_tools import run_grounding_dino
+from app.agent.tools.detection_tools import run_grounding_dino
 
 det_json = run_grounding_dino(
     image_path=IMAGE_PATH,
@@ -42,7 +42,7 @@ if det["num_detections"] == 0:
 
 # ── Step 2: CLIP verification ─────────────────────────────────────────────────
 print("Step 2 — CLIP: verifying crops against 'a person'...")
-from agent.tools.similarity_tools import clip_verify_crops
+from app.agent.tools.similarity_tools import clip_verify_crops
 
 ver_json = clip_verify_crops(
     crop_paths_json=json.dumps(det["crop_paths"]),
@@ -57,7 +57,7 @@ print()
 
 # ── Step 3: Annotate verified boxes ──────────────────────────────────────────
 print("Step 3 — Annotating verified detections...")
-from agent.tools.image_tools import annotate_boxes
+from app.agent.tools.image_tools import annotate_boxes
 
 ann_json = annotate_boxes(
     image_path=IMAGE_PATH,

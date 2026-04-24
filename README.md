@@ -20,7 +20,7 @@ pip install git+https://github.com/npnkhoi/agentflow.git
 ## Running a pipeline
 
 ```bash
-conda run -n visual-agent python pipelines/_runner.py pipelines/configs/<name>.yaml
+conda run -n visual-agent python pipelines/run.py pipelines/configs/<name>.yaml
 ```
 
 Output is written to `output/<pipeline-name>/`. If the last stage is `EvalResult`, accuracy is printed at the end.
@@ -30,16 +30,6 @@ Output is written to `output/<pipeline-name>/`. If the last stage is `EvalResult
 ## Configs
 
 All configs live in `pipelines/configs/`. Each YAML defines a loader, stages, and processors.
-
-| Config | Description |
-|---|---|
-| `gdino_tiny.yaml` | Grounding DINO tiny, oracle noun prompt |
-| `gdino_tiny_prompt_extract.yaml` | Grounding DINO tiny, LLM noun extraction |
-| `gdino_base.yaml` | Grounding DINO base, oracle noun prompt |
-| `gdino_base_prompt_extract.yaml` | Grounding DINO base, LLM noun extraction |
-| `mobilenet.yaml` | SSDLite MobileNetV3, max-class heuristic |
-| `vlm_count_qwen.yaml` | Qwen2.5-VL-7B direct counting |
-| `vlm_count_gemma.yaml` | Gemma-4 direct counting |
 
 ---
 
@@ -55,7 +45,9 @@ conda run -n visual-agent streamlit run pipelines/viewer.py
 
 ## Data
 
-Images live in `data/`. The canonical dataset is `pipelines/data/countbench.json` (412 items), built from CountBench via:
+Images live in `data/` and can be downloaded using `scripts/0330_download_images.py`. 
+
+The canonical dataset is `labels/cb_412.json` (412 items), built from CountBench via:
 
 ```bash
 conda run -n visual-agent python scripts/0418_prepare_countbench.py

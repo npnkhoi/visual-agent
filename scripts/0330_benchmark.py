@@ -126,7 +126,7 @@ def extract_count_from_text(text: str) -> int:
 
 
 def run_system1(limit: int | None = None) -> list[dict]:
-    from agent.agent import build_agent
+    from app.agent.agent import build_agent
 
     out_dir = os.path.join(RESULTS_DIR, "system1")
     os.makedirs(out_dir, exist_ok=True)
@@ -208,8 +208,8 @@ def run_system1(limit: int | None = None) -> list[dict]:
 # ── System 2: Fixed Pipeline (GDINO → CLIP) ───────────────────────────────────
 
 def run_system2(items: list[dict]) -> list[dict]:
-    from agent.tools.detection_tools import run_grounding_dino
-    from agent.tools.similarity_tools import clip_verify_crops
+    from app.agent.tools.detection_tools import run_grounding_dino
+    from app.agent.tools.similarity_tools import clip_verify_crops
 
     out_dir = os.path.join(RESULTS_DIR, "system2")
     os.makedirs(out_dir, exist_ok=True)
@@ -327,7 +327,7 @@ def run_system2(items: list[dict]) -> list[dict]:
 # ── System 3: GDINO only ───────────────────────────────────────────────────────
 
 def run_system3(items: list[dict]) -> list[dict]:
-    from agent.tools.detection_tools import run_grounding_dino
+    from app.agent.tools.detection_tools import run_grounding_dino
 
     out_dir = os.path.join(RESULTS_DIR, "system3")
     os.makedirs(out_dir, exist_ok=True)
