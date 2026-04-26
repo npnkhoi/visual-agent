@@ -333,7 +333,7 @@ def run_stage_2_san(
     """
     Runs via subprocess. Python inherently prevents VRAM leaks from subprocesses.
     """
-    predict_script = repo_root / "OmniCount"/ "external" / "SAN" / "predict.py"
+    predict_script = repo_root / "external" / "SAN" / "predict.py"
     if not predict_script.exists():
         print(f"[Stage 2] Skipping SAN: Script not found at {predict_script}")
         return
@@ -369,7 +369,7 @@ def run_stage_2_san(
 
 # ---------- Stage 3: Marigold depth ----------
 def run_stage_3_marigold(repo_root: Path, image_dir: Path, depth_out_dir: Path):
-    marigold_script = repo_root / "OmniCount" / "scripts" / "project_wrappers" / "marigold_run_mod.py"
+    marigold_script = repo_root / "scripts" / "project_wrappers" / "marigold_run_mod.py"
     if not marigold_script.exists():
         print(f"[Stage 3] Skipping Marigold: Script not found at {marigold_script}")
         return

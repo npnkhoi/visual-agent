@@ -1,0 +1,94 @@
+{
+  "q2.jpg": {
+    "question_id": 2,
+    "question": "City prints: Set of [MASK] big prints - $150.00 USD",
+    "decomposition": {
+      "reasoning": "Identified target noun as 'print' and extracted attributes and interactions from the query.",
+      "target_noun": "print",
+      "attributes": [
+        "big"
+      ],
+      "interactions": [
+        "set"
+      ]
+    },
+    "san_prompt": "big print",
+    "answer": 3,
+    "image_url": "http://img0.etsystatic.com/000/0/5304297/il_fullxfull.191730668.jpg"
+  },
+  "q3.jpg": {
+    "question_id": 3,
+    "question": "Set of [MASK] arrows in all directions vector",
+    "decomposition": {
+      "reasoning": "Identified 'arrows' as the target noun, and extracted attributes and interactions based on the given context.",
+      "target_noun": "arrow",
+      "attributes": [],
+      "interactions": [
+        "all directions",
+        "vector"
+      ]
+    },
+    "san_prompt": "arrow",
+    "answer": 8,
+    "image_url": "https://cdn.vectorstock.com/i/thumb-large/74/37/4657437.jpg"
+  },
+  "q4.jpg": {
+    "question_id": 4,
+    "question": "Vintage silver plate tablespoons, serving spoon set of [MASK] 1847 Rogers pattern",
+    "decomposition": {
+      "reasoning": "Identified target noun as 'tablespoon' and extracted attributes and interactions from the query.",
+      "target_noun": "tablespoon",
+      "attributes": [
+        "silver",
+        "vintage",
+        "1847 Rogers pattern"
+      ],
+      "interactions": [
+        "serving",
+        "set"
+      ]
+    },
+    "san_prompt": "silver vintage 1847 Rogers pattern tablespoon",
+    "answer": 6,
+    "image_url": "https://laurelleaffarm.com/item-photos/vintage-silver-plate-tablespoons-serving-spoon-set-of-six-1847-Rogers-Ambassador-pattern-Laurel-Leaf-Farm-item-no-pw515216-1.jpg"
+  },
+  "q5.jpg": {
+    "question_id": 5,
+    "question": "Kids playing beach: Vintage color filltered of [MASK] cute little girls having fun blowing bubbles on beach in summer time Stock Photo",
+    "decomposition": {
+      "reasoning": "Identified the main subject of the query as 'girls' and extracted relevant information.",
+      "target_noun": "girls",
+      "attributes": [
+        "cute",
+        "little"
+      ],
+      "interactions": [
+        "blowing bubbles",
+        "having fun"
+      ]
+    },
+    "san_prompt": "cute little girls",
+    "answer": 2,
+    "image_url": "https://us.123rf.com/450wm/pingpao/pingpao1505/pingpao150500257/40608684-vintage-color-filltered-of-two-cute-little-girls-having-fun-blowing-bubbles-on-beach-in-summer-time.jpg?ver=6"
+  },
+  "q7.webp": {
+    "question_id": 7,
+    "question": "A preview of [MASK] printable dot marker coloring pages. Each page has a large 4th of July themed image with dots to color in with a dauber style marker.",
+    "decomposition": {
+      "reasoning": "Identified the target noun as'marker' based on the context of coloring pages and dauber style marker.",
+      "target_noun": "marker",
+      "attributes": [
+        "printable",
+        "dot",
+        "dauber style"
+      ],
+      "interactions": [
+        "coloring",
+        "color in"
+      ]
+    },
+    "san_prompt": "printable dot dauber style marker",
+    "answer": 7,
+    "image_url": "https://natashalh.com/wp-content/uploads/2021/05/free-fourth-of-july-dauber-marker-printables-1024x683.webp"
+  }
+}
